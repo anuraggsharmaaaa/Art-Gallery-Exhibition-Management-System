@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% block title %}Login{% endblock %}
+{% block content %}
+<div class="form-wrapper">
+    <div class="form-box">
+        <h2>Gallery Login</h2>
+        <form method="POST" action="/login">
+            <div class="form-group">
+                <label for="email">Email</label>
+                <input type="email" id="email" name="email" required>
+            </div>
+            <div class="form-group">
+                <label for="password">Password</label>
+                <input type="password" id="password" name="password" required>
+            </div>
+            <button type="submit" class="admin-button blue" style="width: 100%; margin-top: 15px;">Login</button>
+            <a href="/register" class="button-link">Create a Customer Account</a>
+        </form>
+    </div>
+</div>
+{% endblock %}

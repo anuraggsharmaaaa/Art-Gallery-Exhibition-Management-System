@@ -1,0 +1,120 @@
+{% extends "base.html" %}
+
+{% block title %}Artwork Gallery{% endblock %}
+
+{% block header_links %}
+    {% if gallery %}
+        <a href="/exhibitions/{{ gallery.GalleryID }}" class="header-link exhibit">View Exhibitions</a>
+    {% elif exhibition_name %}
+        <a href="/exhibitions/{{ gallery_id }}" class="header-link exhibit">Back to Exhibitions</a>
+    {% endif %}
+{% endblock %}
+
+{% block content %}
+    <div class="title-container">
+        {% if artist_name %}
+            <h1 class="dynamic-title">Works by {{ artist_name }}</h1>
+            <a href="/">← Back to All Galleries</a>
+        {% elif search_query %}
+            <h1 class.dynamic-title">Search Results for "{{ search_query }}"</h1>
+            <a href="/">← Back to All Galleries</a>
+        {% elif exhibition_name %}
+            <h1 class="dynamic-title">On Display at: {{ exhibition_name }}</h1>
+            <a href="/exhibitions/{{ gallery_id }}">← Back to All Exhibitions</a>
+        {% elif gallery %}
+            <h1 class="dynamic-title">Showing Artwork at: {{ gallery.Name }}</h1>
+            <a href="/">← Back to All Galleries</a>
+        {% endif %}
+    </div>
+
+    <div class="gallery-container">
+        {% for art in artworks %}
+        <div class="artwork-card" style="animation-delay: {{ loop.index * 0.1 }}s;">
+            <div class="image-placeholder" title="{{ art.Title }}"></div>
+            <div class="info">
+                <h3>{{ art.Title }}</h3>
+                <p>By: <a href="/artist/{{ art.ArtistID }}" class="artist-link">{{ art.ArtistName }}</a></p>
+                <p><b>Price: ${{ "%.2f"|format(art.PurchasePrice) }}</b></p>
+                <p class="description">{{ art.Description }}</p>
+                {% if current_user.is_authenticated and current_user.role == 'customer' %}
+                    <button onclick="showPaymentModal('{{ art.InventoryID }}', '{{ art.Title }}', '{{ art.PurchasePrice }}')">Buy Now</button>
+                {% endif %}
+            </div>
+        </div>
+        {% else %}
+        <div style="text-align: center; width: 100%;">
+            <h3>No artwork to display.</h3>
+        </div>
+        {% endfor %}
+    </div>
+
+    <div id="payment-modal" class="modal-overlay">
+        <div class="modal-content">
+            <h2>Confirm Purchase</h2>
+            <p>You are about to purchase: <b id="modal-art-title">Artwork Title</b></p>
+            <p>Price: <b id="modal-art-price">$0.00</b></p>
+            <form id="payment-form">
+                <h3>Select Payment Method</h3>
+                <div><input type="radio" id="pay-cc" name="payment_method" value="Credit Card" checked><label for="pay-cc">Credit Card</label></div>
+                <div><input type="radio" id="pay-upi" name="payment_method" value="UPI"><label for="pay-upi">UPI</label></div>
+                <div><input type="radio" id="pay-net" name="payment_method" value="Net Banking"><label for="pay-net">Net Banking</label></div>
+                <div class="modal-buttons">
+                    <button type="button" id="cancel-payment-btn" onclick="hideModal('payment-modal')">Cancel</button>
+                    <button type="button" id="confirm-payment-btn" onclick="confirmPayment()">Confirm Payment</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <div id="success-overlay" class="modal-overlay">
+        <div id="success-box">
+            <div class="success-checkmark">&#x2713;</div>
+            <h2 class.success-title">Payment Successful!</h2>
+            <p class="success-message">Your purchase has been confirmed.</p>
+            <a href="#" id="receipt-button" class="receipt-button">View Receipt</a>
+        </div>
+    </div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    let currentInventoryID = null;
+    const modal = document.getElementById('payment-modal');
+    const successOverlay = document.getElementById('success-overlay');
+    
+    function showModal(id) {
+        document.getElementById(id).classList.add('show');
+    }
+    function hideModal(id) {
+        document.getElementById(id).classList.remove('show');
+    }
+
+    function showPaymentModal(inventory_id, title, price) {
+        currentInventoryID = inventory_id;
+        document.getElementById('modal-art-title').innerText = title;
+        document.getElementById('modal-art-price').innerText = '$' + price;
+        showModal('payment-modal');
+    }
+
+    async function confirmPayment() {
+        const paymentMethod = document.querySelector('input[name="payment_method"]:checked').value;
+        if (!currentInventoryID) return;
+        const response = await fetch('/buy', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ 
+                inventory_id: currentInventoryID,
+                payment_method: paymentMethod 
+            })
+        });
+        const data = await response.json();
+        hideModal('payment-modal');
+        if (data.error) {
+            alert('Error: ' + data.error);
+        } else {
+            document.getElementById('receipt-button').href = '/receipt/' + data.sale_id;
+            showModal('success-overlay');
+        }
+    }
+</script>
+{% endblock %}

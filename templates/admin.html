@@ -1,0 +1,99 @@
+{% extends "base.html" %}
+{% block title %}Admin Dashboard{% endblock %}
+{% block body_class %}admin-body{% endblock %}
+
+{% block header_links %}
+    <a href="/admin/staff" class="header-link" style="background-color: #5856d6;">Manage Staff</a>
+    <a href="/admin/exhibitions" class="header-link" style="background-color: #ff9500;">Manage Exhibitions</a>
+    <a href="/admin/payments" class="header-link" style="background-color: #34c759;">Payments Dashboard</a>
+{% endblock %}
+
+{% block content %}
+    <div class="admin-grid" style="margin-top: 20px;">
+        <div class="admin-container">
+            <h2>Inventory Actions</h2>
+            <h3>1. READ Inventory (This Gallery)</h3>
+            <button class="admin-button blue" onclick="getInventory()">Load Inventory</button>
+            <div id="artworks-list">...</div>
+            
+            <a href="/admin/inventory/add" class="admin-button" style="margin-top: 15px;">
+                + Add New Inventory Item
+            </a>
+            <h3 style="margin-top: 20px;">2. CREATE Artist (Global)</h3>
+            <div class="form-group">
+                <input type="text" id="artist_name" placeholder="Artist Name (e.g., 'New Artist')">
+            </div>
+            <div class.form-group">
+                <input type="text" id="artist_nat" placeholder="Nationality (e.g., 'Canadian')">
+            </div>
+            <button class="admin-button" onclick="addArtist()">Add Artist</button>
+        </div>
+        <div class="admin-container">
+            <h2>Global Queries & Results</h2>
+            <h3>5. Run Complex Queries</h3>
+            <button class="admin-button blue" onclick="runQuery(1)">Q1: Available Inventory</button>
+            
+            <button class="admin-button blue" onclick="runQuery(2)">Q2: All Transactions</button>
+            
+            <button class="admin-button blue" onclick="runQuery(3)">Q3: Artworks per Artist</button>
+            <button class="admin-button blue" onclick="runQuery(4)">Q4: Avg. Inventory Price</button>
+            <button class="admin-button blue" onclick="runQuery(5)">Q5: Show Audit Log</button>
+            <h3>Results:</h3>
+            <pre id="results">Click a button to see results...</pre>
+        </div>
+    </div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    const resultsEl = document.getElementById('results');
+    const artlistEl = document.getElementById('artworks-list');
+    async function getInventory() {
+        const response = await fetch('/admin/artworks');
+        const data = await response.json();
+        resultsEl.textContent = JSON.stringify(data, null, 2);
+        artlistEl.innerHTML = '';
+        for (let item of data) {
+            artlistEl.innerHTML += `
+                <div style="border-bottom: 1px solid #eee; padding-bottom: 10px; margin-bottom: 10px;">
+                    <b>${item.Title}</b> (Artist: ${item.ArtistName})
+                    <p>Status: ${item.Status}, Price: $${item.PurchasePrice}</p>
+                    <p style="margin-top: 10px;">
+                        <button class="admin-button red" onclick="deleteArtwork(${item.InventoryID})">Delete</button>
+                        <button class="admin-button" style="background-color: #34c759;" onclick="updateStatus(${item.InventoryID}, '${item.Status == 'Sold' ? 'Available' : 'Sold'}')">Mark ${item.Status == 'Sold' ? 'Available' : 'Sold'}</button>
+                    </p>
+                </div>
+            `;
+        }
+    }
+    async function addArtist() {
+        const name = document.getElementById('artist_name').value;
+        const nationality = document.getElementById('artist_nat').value;
+        const response = await fetch('/admin/artist', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ name, nationality })
+        });
+        resultsEl.textContent = JSON.stringify(await response.json(), null, 2);
+    }
+    async function deleteArtwork(id) {
+        if (!confirm(`Really delete inventory item ${id}? This will fire a trigger.`)) return;
+        const response = await fetch(`/admin/artwork/delete/${id}`, { method: 'DELETE' });
+        resultsEl.textContent = JSON.stringify(await response.json(), null, 2);
+        getInventory();
+    }
+    async function updateStatus(id, status) {
+        const response = await fetch(`/admin/artwork/update/${id}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ status })
+        });
+        resultsEl.textContent = JSON.stringify(await response.json(), null, 2);
+        getInventory();
+    }
+    async function runQuery(id) {
+        const response = await fetch(`/admin/queries/${id}`);
+        resultsEl.textContent = JSON.stringify(await response.json(), null, 2);
+    }
+</script>
+{% endblock %}

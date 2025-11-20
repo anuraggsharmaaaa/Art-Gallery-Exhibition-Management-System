@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+
+{% block title %}Our Locations - Art Gallery{% endblock %}
+
+{% block content %}
+    <h1 class="page-title">Our Locations</h1>
+    <div class="card-list">
+        {% for gallery in galleries %}
+        <div class="card" style="animation-delay: {{ loop.index * 0.1 }}s;">
+            <img src="{{ url_for('static', filename='images/' + gallery.ImageURL) }}" alt="{{ gallery.Name }} Exterior">
+            <div class.info">
+                <h3>{{ gallery.Name }}</h3>
+                <p>{{ gallery.Address }}, {{ gallery.City }}</p>
+                <p class="hours">Hours: {{ gallery.Hours }}</p>
+                <div class="button-group">
+                    <a href="/gallery/{{ gallery.GalleryID }}" class="button">View Artwork</a>
+                    <a href="/exhibitions/{{ gallery.GalleryID }}" class="button exhibit">View Exhibitions</a>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+{% endblock %}

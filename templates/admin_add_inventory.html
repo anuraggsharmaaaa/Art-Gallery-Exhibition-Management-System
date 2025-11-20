@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% block title %}Add New Inventory{% endblock %}
+{% block body_class %}admin-body{% endblock %}
+{% block content %}
+    <header class="admin-header">
+        <h1>Admin: Add New Inventory Item to {{ current_user.gallery_name }}</h1>
+        <div>
+            <a href="/admin">Main Dashboard</a>
+        </div>
+    </header>
+    <div class="form-wrapper">
+        <div class="form-box" style="background: #fff; color: #333;">
+            <form method="POST">
+                <div class="form-group">
+                    <label for="artwork_id">Artwork (Concept)</label>
+                    <select id="artwork_id" name="artwork_id" required>
+                        <option value="">-- Select an Artwork --</option>
+                        {% for art in artworks %}
+                            <option value="{{ art.ArtworkID }}">{{ art.Title }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="price">Purchase Price</label>
+                    <input type="number" step="0.01" id="price" name="price" required>
+                </div>
+                <div class="form-group">
+                    <label for="status">Status</label>
+                    <select id="status" name="status" required>
+                        <option value="Available">Available</option>
+                        <option value="On Loan">On Loan</option>
+                    </select>
+                </div>
+                <button type="submit" class="admin-button">Add Item to Inventory</button>
+            </form>
+        </div>
+    </div>
+{% endblock %}

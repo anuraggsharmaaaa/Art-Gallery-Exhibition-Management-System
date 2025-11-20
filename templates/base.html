@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>{% block title %}Art Gallery{% endblock %}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    {% block head_extra %}{% endblock %}
+</head>
+<body class="{% block body_class %}{% endblock %}">
+    
+    <header>
+        <div class="header-left">
+            <h1><a href="/"><span class="logo-symbol">&#x1F3DB;</span> Art Gallery</a></h1>
+            {% block header_links %}{% endblock %}
+        </div>
+        
+        {% if not current_user.is_authenticated or current_user.role == 'customer' %}
+        <form action="/search" method="GET" class="search-form">
+            <input type="search" name="q" placeholder="Search by title or description..." value="{{ search_query or '' }}">
+            <button type="submit">Search</button>
+        </form>
+        {% endif %}
+
+        <div class="header-right">
+            {% if current_user.is_authenticated %}
+                <span style="margin-right: 15px;">Hi, {{ current_user.name }}</span>
+                {% if current_user.role == 'admin' %}
+                    <a href="/admin" class="header-link admin">Admin Dashboard</a>
+                {% endif %}
+                <a href="/profile" class="header-link" style="background-color: var(--brand-gold); color: var(--bg-dark-2);">My Profile</a>
+                <a href="/logout" class="header-link logout">Logout</a>
+            {% else %}
+                <a href="/login" class="header-link">Login</a>
+                <a href="/register" class="header-link" style="background-color: var(--brand-blue);">Register</a>
+            {% endif %}
+        </div>
+    </header>
+
+    <main>
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+            <div class="flash-messages" style="text-align: center; padding: 10px; background: var(--brand-red); color: white; font-weight: 700;">
+                {% for category, message in messages %}
+                <div class="flash-message flash-{{ category }}">{{ message }}</div>
+                {% endfor %}
+            </div>
+            {% endif %}
+        {% endwith %}
+        
+        {% block content %}{% endblock %}
+    </main>
+
+    <footer>
+        <h2>About The Gallery</h2>
+        <p>We are a world-class institution dedicated to the preservation and display of fine art. Our collection spans centuries and continents, offering a unique journey through human creativity.</p>
+        <p>&copy; 2025 Art Gallery DBMS Project</p>
+    </footer>
+
+    {% block scripts %}{% endblock %}
+</body>
+</html>

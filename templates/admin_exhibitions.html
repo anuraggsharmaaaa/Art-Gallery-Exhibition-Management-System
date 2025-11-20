@@ -1,0 +1,83 @@
+{% extends "base.html" %}
+{% block title %}Manage Exhibitions{% endblock %}
+{% block body_class %}admin-body{% endblock %}
+{% block content %}
+    <header class="admin-header">
+        <h1>Admin: Manage Exhibitions for {{ current_user.gallery_name }}</h1>
+        <div>
+            <a href="/admin">Main Dashboard</a>
+        </div>
+    </header>
+
+    <div class="admin-grid">
+        <div class="admin-container">
+            <h2>Add New Exhibition</h2>
+            <form action="/admin/exhibitions" method="POST">
+                <div class="form-group">
+                    <label for="title">Title</label>
+                    <input type="text" id="title" name="title" required>
+                </div>
+                <div class="form-group">
+                    <label for="description">Description</label>
+                    <textarea id="description" name="description"></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="start_date">Start Date</label>
+                    <input type="date" id="start_date" name="start_date" required>
+                </div>
+                <div class="form-group">
+                    <label for="end_date">End Date</label>
+                    <input type="date" id="end_date" name="end_date" required>
+                </div>
+                <button type="submit" class="admin-button">Create Exhibition</button>
+            </form>
+        </div>
+        
+        <div class="admin-container">
+            <h2>Current & Upcoming Exhibitions</h2>
+            {% for ex in exhibitions %}
+            <div style="border-bottom: 1px solid #eee; padding: 15px 0; display: flex; justify-content: space-between; align-items: center;">
+                <div>
+                    <h3 style="margin: 0 0 5px 0; color: #333;">{{ ex.Title }}</h3>
+                    <p style="font-style: italic; font-size: 0.8rem; color: #777;">{{ ex.StartDate.strftime('%Y-%m-%d') }} to {{ ex.EndDate.strftime('%Y-%m-%d') }}</p>
+                    <p style="margin: 0; font-size: 0.9rem; color: #555;">{{ ex.Description }}</p>
+                </div>
+                
+                <div>
+                    {% if ex.EndDate >= today %}
+                        <a href="/admin/exhibition/edit/{{ ex.ExhibitionID }}" class="admin-button blue" style="margin-right: 5px;">Manage</a>
+                        <button class="admin-button red" onclick="concludeExhibition({{ ex.ExhibitionID }})">Conclude Now</button>
+                    {% else %}
+                        <span style="color: #555; font-weight: 700;">(Concluded)</span>
+                    {% endif %}
+                </div>
+                
+            </div>
+            {% else %}
+            <p>No exhibitions found for this gallery.</p>
+            {% endfor %}
+        </div>
+    </div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+async function concludeExhibition(exhibitionId) {
+    if (!confirm('Are you sure you want to conclude this exhibition? This will set its end date to today and remove it from the customer view.')) {
+        return;
+    }
+    
+    const response = await fetch(`/admin/exhibition/conclude/${exhibitionId}`, {
+        method: 'POST'
+    });
+    
+    if (response.ok) {
+        // Success! Reload the page to show the "(Concluded)" status.
+        location.reload();
+    } else {
+        const data = await response.json();
+        alert(`Error: ${data.error}`);
+    }
+}
+</script>
+{% endblock %}

@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+{% block title %}Edit Exhibition{% endblock %}
+{% block body_class %}admin-body{% endblock %}
+{% block content %}
+    <header class="admin-header">
+        <h1>Edit Exhibition: {{ exhibition.Title }}</h1>
+        <div>
+            <a href="/admin/exhibitions">← Back to Exhibitions</a>
+        </div>
+    </header>
+
+    <form method="POST">
+        <div class="admin-grid">
+            <div class="admin-container">
+                <h2>Exhibition Details</h2>
+                <div class="form-group">
+                    <label for="title">Title</label>
+                    <input type="text" id="title" name="title" value="{{ exhibition.Title }}" required>
+                </div>
+                <div class="form-group">
+                    <label for="description">Description</label>
+                    <textarea id="description" name="description">{{ exhibition.Description }}</textarea>
+                </div>
+                <div class="form-group">
+                    <label for="start_date">Start Date</label>
+                    <input type="date" id="start_date" name="start_date" value="{{ exhibition.StartDate.strftime('%Y-%m-%d') }}" required>
+                </div>
+                <div class="form-group">
+                    <label for="end_date">End Date</label>
+                    <input type="date" id="end_date" name="end_date" value="{{ exhibition.EndDate.strftime('%Y-%m-%d') }}" required>
+                </div>
+            </div>
+            
+            <div class="admin-container">
+                <h2>Link Inventory Items</h2>
+                <p>Showing items from {{ current_user.gallery_name }}.</p>
+                <div style="max-height: 400px; overflow-y: auto; border: 1px solid #ddd; border-radius: 5px; padding: 10px;">
+                    {% for item in all_inventory %}
+                    <label style="display: block; padding: 8px;">
+                        <input type="checkbox" name="inventory_ids" value="{{ item.InventoryID }}"
+                            {% if item.is_linked %} checked {% endif %}
+                        >
+                        {{ item.Title }}
+                    </label>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+        
+        <div style="margin-top: 20px;">
+            <button type="submit" class="admin-button">Save All Changes</button>
+        </div>
+    </form>
+{% endblock %}

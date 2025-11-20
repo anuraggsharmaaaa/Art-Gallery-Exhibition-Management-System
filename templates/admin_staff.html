@@ -1,0 +1,99 @@
+{% extends "base.html" %}
+{% block title %}Manage Staff{% endblock %}
+{% block body_class %}admin-body{% endblock %}
+
+{% block head_extra %}
+<style>
+    .staff-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        border-bottom: 1px solid #eee;
+        padding: 10px 0;
+    }
+    .staff-item:last-child { border-bottom: none; }
+    .staff-item h3 { margin: 0 0 5px 0; color: #333; }
+    .staff-item p { margin: 0; font-size: 0.9rem; color: #555; }
+</style>
+{% endblock %}
+
+{% block content %}
+    <header class="admin-header">
+        <h1>Admin: Manage Staff for {{ current_user.gallery_name }}</h1>
+        <div>
+            <a href="/admin">Main Dashboard</a>
+        </div>
+    </header>
+
+    <div class="admin-grid">
+        <div class="admin-container">
+            <h2>Add New Staff Member</h2>
+            <form method="POST">
+                <div class.form-group">
+                    <label for="name">Name</label>
+                    <input type="text" id="name" name="name" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="position">Position</label>
+                    <select id="position" name="position" required>
+                        <option value="">-- Select Position --</option>
+                        <option value="Gallery Director">Gallery Director</option>
+                        <option value="Curator">Curator</option>
+                        <option value="Sales Associate">Sales Associate</option>
+                        <option value="Security">Security</option>
+                        <option value="Receptionist">Receptionist</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="email">Email</label>
+                    <input type="email" id="email" name="email" required>
+                </div>
+                <button type="submit" class="admin-button">Add Staff</button>
+            </form>
+        </div>
+        
+        <div class="admin-container">
+            <h2>Current Staff</h2>
+            {% for staff in staff_list %}
+            <div class.staff-item">
+                <div>
+                    <h3>{{ staff.Name }}</h3>
+                    <p>{{ staff.Position }} | {{ staff.Email }}</p>
+                </div>
+                <div>
+                    <button class="admin-button red" onclick="fireStaff({{ staff.StaffID }})">Fire</button>
+                </div>
+            </div>
+            {% else %}
+            <p>No staff found for this gallery.</p>
+            {% endfor %}
+        </div>
+    </div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    async function fireStaff(staffId) {
+        // Show a confirmation pop-up
+        if (!confirm('Are you sure you want to fire this staff member? This action cannot be undone.')) {
+            return; // Do nothing if they click "Cancel"
+        }
+        
+        // Send the request to the new backend route
+        const response = await fetch(`/admin/staff/delete/${staffId}`, {
+            method: 'POST'
+        });
+        
+        if (response.ok) {
+            // Success! Reload the page to show the updated list and success message.
+            location.reload();
+        } else {
+            // Show an error
+            const data = await response.json();
+            alert(`Error: ${data.error}`);
+        }
+    }
+</script>
+{% endblock %}

@@ -1,0 +1,186 @@
+{% extends "base.html" %}
+{% block title %}Payments Dashboard{% endblock %}
+{% block body_class %}admin-body{% endblock %}
+{% block head_extra %}
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        .stats-container { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; margin-bottom: 20px; }
+        .stat-card { background: #fff; border: 1px solid #ccc; padding: 25px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+        .stat-card h3 { margin-top: 0; color: #555; }
+        .stat-card p { font-size: 2.2rem; font-weight: 700; color: #007aff; margin: 0; }
+        .stat-card.profit p { color: #28a745; }
+        .analytics-container { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px; }
+        .stat-card.analytics p { font-size: 2rem; color: #ff9500; }
+        .stat-card.analytics span { font-size: 1rem; color: #555; }
+        .sales-table { width: 100%; border-collapse: collapse; background: #fff; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+        .sales-table th, .sales-table td { padding: 15px; text-align: left; border-bottom: 1px solid #ddd; }
+        .sales-table th { background-color: #f4f4f4; }
+        .sales-table .revenue-col { font-weight: 700; }
+        .sales-table .gallery-cut { color: #28a745; }
+        .sales-table .artist-cut { color: #ff9500; }
+        .chart-container {
+            background: #fff; border: 1px solid #ccc; padding: 20px; 
+            border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            margin-top: 20px;
+        }
+    </style>
+{% endblock %}
+
+{% block content %}
+    <header class="admin-header">
+        <h1>Admin: Payments for {{ gallery_name }}</h1>
+        <div>
+            <a href="/admin/export/csv" class="admin-button" style="background-color: #34c759;">Export to CSV</a>
+            <a href="/admin" class="admin-button blue">Main Dashboard</a>
+        </div>
+    </header>
+
+    <h2>Profit Statistics</h2>
+    <div class="stats-container">
+        <div class="stat-card">
+            <h3>Total Art Revenue</h3>
+            <p>${{ "%.2f"|format(stats.TotalRevenue or 0) }}</p>
+        </div>
+        <div class="stat-card profit">
+            <h3>Total Art Profit</h3>
+            <p>${{ "%.2f"|format(profit.TotalProfit or 0) }}</p>
+        </div>
+        <div class="stat-card profit">
+            <h3>Total Ticket Revenue</h3>
+            <p>${{ "%.2f"|format(ticket_stats.TotalTicketRevenue or 0) }}</p>
+        </div>
+        <div class="stat-card">
+            <h3>Total Art Sales</h3>
+            <p>{{ stats.TotalSales or 0 }}</p>
+        </div>
+    </div>
+    
+    <h2>Advanced Analytics</h2>
+    <div class="analytics-container">
+        <div class="stat-card analytics">
+            <h3>Most Valuable Customer</h3>
+            {% if top_customer %}<p>{{ top_customer.Name }}</p><span>(${{ "%.2f"|format(top_customer.TotalSpent) }} spent)</span>{% else %}<p>N/A</p>{% endif %}
+        </div>
+        <div class="stat-card analytics">
+            <h3>Best-Selling Artist</h3>
+            {% if top_artist %}<p>{{ top_artist.Name }}</p><span>({{ top_artist.TotalSales }} sales)</span>{% else %}<p>N/A</p>{% endif %}
+        </div>
+    </div>
+
+    <div class="admin-grid">
+        <div class="chart-container">
+            <h2>Art Revenue Over Time</h2>
+            <canvas id="mySalesChart"></canvas>
+        </div>
+        <div class="chart-container">
+            <h2>Ticket Revenue Over Time</h2>
+            <canvas id="myTicketChart"></canvas>
+        </div>
+    </div>
+
+    <h2 style="margin-top: 30px;">Transaction History (Art Sales)</h2>
+    <table class="sales-table">
+        <thead>
+            <tr>
+                <th>Sale ID</th><th>Date</th><th>Customer</th><th>Artwork</th>
+                <th>Artist</th><th>Total Price</th><th>Gallery Cut</th><th>Artist Payout</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for sale in sales %}
+            <tr>
+                <td>#{{ sale.SaleID }}</td>
+                <td>{{ sale.SaleDate.strftime('%Y-%m-%d %H:%M') }}</td>
+                <td>{{ sale.CustomerName }}</td>
+                <td>{{ sale.ArtworkTitle }}</td>
+                <td>{{ sale.ArtistName }}</td>
+                <td class="revenue-col">${{ "%.2f"|format(sale.SalePrice) }}</td>
+                <td class="revenue-col gallery-cut">${{ "%.2f"|format(sale.GalleryRevenue) }}</td>
+                <td class="revenue-col artist-cut">${{ "%.2f"|format(sale.ArtistPayout) }}</td>
+            </tr>
+            {% else %}
+            <tr style="text-align: center;"><td colspan="8">No art sales have been made yet for this gallery.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    
+    <h2 style="margin-top: 30px;">Transaction History (Ticket Sales)</h2>
+    <table class="sales-table">
+        <thead>
+            <tr>
+                <th>Ticket ID</th><th>Purchase Date</th><th>Customer</th>
+                <th>Visit Date</th><th>Payment Method</th><th>Price</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for ticket in tickets %}
+            <tr>
+                <td>#{{ ticket.TicketID }}</td>
+                <td>{{ ticket.PurchaseDate.strftime('%Y-%m-%d %H:%M') }}</td>
+                <td>{{ ticket.CustomerName }}</td>
+                <td>{{ ticket.VisitDate.strftime('%Y-%m-%d') }}</td>
+                <td>{{ ticket.PaymentMethod }}</td>
+                <td class="revenue-col">${{ "%.2f"|format(ticket.TicketPrice) }}</td>
+            </tr>
+            {% else %}
+            <tr style="text-align: center;"><td colspan="6">No tickets have been sold yet for this gallery.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // --- Chart 1: Art Sales ---
+    const salesLabels = [];
+    const salesRevenueData = [];
+    let salesCumulativeRevenue = 0;
+    {% for sale in sales|sort(attribute='SaleDate') %}
+        salesLabels.push("{{ sale.SaleDate.strftime('%Y-%m-%d') }}");
+        salesCumulativeRevenue += {{ sale.SalePrice | float }};
+        salesRevenueData.push(salesCumulativeRevenue);
+    {% endfor %}
+    const ctxSales = document.getElementById('mySalesChart').getContext('2d');
+    new Chart(ctxSales, {
+        type: 'line',
+        data: {
+            labels: salesLabels,
+            datasets: [{
+                label: 'Total Art Revenue Over Time',
+                data: salesRevenueData,
+                backgroundColor: 'rgba(0, 122, 255, 0.1)',
+                borderColor: 'rgba(0, 122, 255, 1)',
+                borderWidth: 2,
+                tension: 0.1
+            }]
+        },
+        options: { scales: { y: { beginAtZero: true } } }
+    });
+
+    // --- Chart 2: Ticket Sales ---
+    const ticketLabels = [];
+    const ticketRevenueData = [];
+    let ticketCumulativeRevenue = 0;
+    {% for ticket in tickets|sort(attribute='PurchaseDate') %}
+        ticketLabels.push("{{ ticket.PurchaseDate.strftime('%Y-%m-%d') }}");
+        ticketCumulativeRevenue += {{ ticket.TicketPrice | float }};
+        ticketRevenueData.push(ticketCumulativeRevenue);
+    {% endfor %}
+    const ctxTickets = document.getElementById('myTicketChart').getContext('2d');
+    new Chart(ctxTickets, {
+        type: 'line',
+        data: {
+            labels: ticketLabels,
+            datasets: [{
+                label: 'Total Ticket Revenue Over Time',
+                data: ticketRevenueData,
+                backgroundColor: 'rgba(40, 167, 69, 0.1)',
+                borderColor: 'rgba(40, 167, 69, 1)',
+                borderWidth: 2,
+                tension: 0.1
+            }]
+        },
+        options: { scales: { y: { beginAtZero: true } } }
+    });
+</script>
+{% endblock %}

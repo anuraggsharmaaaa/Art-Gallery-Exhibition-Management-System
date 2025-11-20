@@ -1,0 +1,136 @@
+{% extends "base.html" %}
+{% block title %}Sale Receipt - {{ sale.SaleID }}{% endblock %}
+{% block head_extra %}
+<style>
+    .receipt-container {
+        width: 100%;
+        max-width: 600px;
+        background: #fff;
+        color: #333;
+        border: 1px solid #ddd;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        border-top: 5px solid var(--brand-wood);
+        margin: 40px auto;
+    }
+    .receipt-header {
+        text-align: center;
+        padding: 30px;
+        border-bottom: 2px dashed #ccc;
+    }
+    .receipt-header h1 {
+        color: var(--brand-wood);
+        margin: 0;
+        font-size: 2.5rem;
+    }
+    .receipt-header p {
+        font-size: 1.2rem;
+        color: var(--brand-green);
+        font-weight: 700;
+        margin: 10px 0 0 0;
+    }
+    .receipt-body { padding: 30px; }
+    .receipt-body .detail-row {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 20px;
+        padding-bottom: 20px;
+        border-bottom: 1px solid #eee;
+    }
+    .receipt-body .detail-row:last-child { border-bottom: none; }
+    .receipt-body .detail-row span {
+        font-weight: 500;
+        color: #555;
+        display: block;
+    }
+    .receipt-body .detail-row strong {
+        font-weight: 700;
+        color: #000;
+        text-align: right;
+    }
+    .receipt-total {
+        background: #f4f1ea;
+        padding: 20px 30px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        font-size: 1.5rem;
+    }
+    .receipt-total span {
+        font-family: var(--font-header);
+        font-weight: 700;
+        color: #000;
+    }
+    .receipt-total strong {
+        font-family: var(--font-header);
+        color: var(--brand-maroon);
+    }
+    .button-container {
+        width: 90%;
+        max-width: 600px;
+        margin: 0 auto 40px auto;
+        display: flex;
+        gap: 10px;
+    }
+    .action-button {
+        display: block;
+        flex: 1;
+        text-align: center;
+        text-decoration: none;
+        margin-top: 20px;
+        padding: 15px;
+        background: var(--brand-blue);
+        color: white;
+        border: none;
+        border-radius: 5px;
+        font-size: 1rem;
+        font-weight: 700;
+        cursor: pointer;
+        font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+    }
+    .action-button.back { background-color: #555; }
+</style>
+{% endblock %}
+
+{% block content %}
+    <div class="receipt-container">
+        <div class="receipt-header">
+            <h1>Art Gallery</h1>
+            <p>Payment Successful!</p>
+        </div>
+        <div class="receipt-body">
+            <div class="detail-row">
+                <span>Sale ID:</span>
+                <strong>#{{ sale.SaleID }}</strong>
+            </div>
+            <div class="detail-row">
+                <span>Date:</span>
+                <strong>{{ sale.SaleDate.strftime('%B %d, %Y') }}</strong>
+            </div>
+            <div class="detail-row">
+                <span>Customer:</span>
+                <strong>{{ sale.CustomerName }}</strong>
+            </div>
+            <div class="detail-row">
+                <span>Gallery:</span>
+                <strong>{{ sale.GalleryName }}</strong>
+            </div>
+            <div class="detail-row">
+                <span>Item:</span>
+                <strong>{{ sale.ArtworkTitle }} (by {{ sale.ArtistName }})</strong>
+            </div>
+            <div class="detail-row">
+                <span>Paid Via:</span>
+                <strong>{{ sale.PaymentMethod }}</strong>
+            </div>
+        </div>
+        <div class="receipt-total">
+            <span>Total Paid:</span>
+            <strong>${{ "%.2f"|format(sale.SalePrice) }}</strong>
+        </div>
+    </div>
+    
+    <div class="button-container">
+        <a href="/" class="action-button back">← Back to All Galleries</a>
+        <button class="action-button" onclick="window.print()">Print Receipt</button>
+    </div>
+{% endblock %}
